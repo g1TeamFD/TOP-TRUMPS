@@ -1,0 +1,276 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Industry Top Trumps Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #e9f5ff, #f2f9fc);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .game-container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .game-header {
+      background-color: #003366;
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .scoreboard {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .card-container {
+      display: flex;
+      justify-content: space-around;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      width: 220px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+
+    .card h5 {
+      color: #003366;
+      font-weight: bold;
+    }
+
+    .card-body {
+      margin-top: 10px;
+    }
+
+    .clickable-attribute {
+      cursor: pointer;
+      color: #007bff;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .clickable-attribute:hover {
+      color: #0056b3;
+    }
+
+    .summary-screen {
+      display: none;
+      padding: 20px;
+      background-color: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .summary-screen h2 {
+      color: #003366;
+      font-weight: bold;
+    }
+
+    .start-buttons {
+      margin-top: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .card-container {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<div class="game-container">
+  <div class="game-header">
+    <div class="scoreboard d-flex justify-content-between align-items-center">
+      <div>Player Score: <span id="player_count">0</span></div>
+      <div>Industry Top Trumps</div>
+      <div>Computer Score: <span id="computer_count">0</span></div>
+    </div>
+  </div>
+
+  <!-- Cards display -->
+  <div class="card-container" id="gameContainer">
+    <div id="playercard" class="card">
+      <h5 id="playercard_header">Player Card</h5>
+      <div class="card-body" id="playercard_categories"></div>
+    </div>
+    <div id="computercard" class="card">
+      <h5 id="computercard_header">Computer Card - <span id="computer_industry"></span></h5>
+      <div class="card-body text-muted text-center">Attributes Hidden</div>
+    </div>
+  </div>
+
+  <!-- Control buttons and alert message -->
+  <div class="start-buttons">
+    <button type="button" class="btn btn-primary btn-lg" id="startGame">Start Game</button>
+  </div>
+
+  <!-- Summary Screen -->
+  <div class="summary-screen" id="summaryScreen">
+    <h2>Game Summary</h2>
+    <p>Total Rounds Played: 10</p>
+    <p>Final Player Score: <span id="finalPlayerScore"></span></p>
+    <p>Final Computer Score: <span id="finalComputerScore"></span></p>
+    <p>Average Player Score per Round: <span id="averagePlayerScore"></span></p>
+    <p>Average Computer Score per Round: <span id="averageComputerScore"></span></p>
+    <button type="button" class="btn btn-primary btn-lg" id="playAgain">Play Again</button>
+  </div>
+
+  <!-- Round Result Modal -->
+  <div class="modal fade" id="resultModal" tabindex="-1" role="dialog" aria-labelledby="resultModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="resultModalLabel">Round Result</h5>
+        </div>
+        <div class="modal-body" id="resultMessage"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" id="closeModal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+
+<script>
+// Industry data for the game
+const allCards = [
+  { name: "Technology", MarketSize: 5000, GrowthRate: 10.5, Employment: 50, GlobalReach: 190, Innovation: 95 },
+  { name: "Finance", MarketSize: 3100, GrowthRate: 7.3, Employment: 20, GlobalReach: 150, Innovation: 85 },
+  { name: "Healthcare", MarketSize: 3700, GrowthRate: 6.5, Employment: 30, GlobalReach: 180, Innovation: 80 },
+  { name: "Energy", MarketSize: 2700, GrowthRate: 5.0, Employment: 25, GlobalReach: 160, Innovation: 70 }
+];
+
+let playerScore = 0;
+let computerScore = 0;
+let roundsPlayed = 0;
+const maxRounds = 10;
+let playerCard, computerCard;
+
+$("#startGame").click(function() {
+  playerScore = 0;
+  computerScore = 0;
+  roundsPlayed = 0;
+  updateScores();
+  $("#summaryScreen").hide();
+  $("#gameContainer").show();
+  $(this).hide(); // Hide the "Start Game" button after the game starts
+  startTurn();
+});
+
+function startTurn() {
+  if (roundsPlayed < maxRounds) {
+    playerCard = drawCard();
+    computerCard = drawCard();
+    displayCard(playerCard, "#playercard_categories", "#playercard_header", "Player Card", true);
+    displayComputerCard(computerCard.name);
+  } else {
+    showSummary();
+  }
+}
+
+function drawCard() {
+  return allCards[Math.floor(Math.random() * allCards.length)];
+}
+
+function displayCard(card, elementId, headerId, title, isPlayer) {
+  $(elementId).empty();
+  $(headerId).text(`${title} - ${card.name}`);
+  Object.keys(card).forEach((key) => {
+    if (key !== "name") {
+      const attributeItem = `<div class="list-group-item clickable-attribute" 
+                                data-attribute="${key}">${key}: ${card[key]}</div>`;
+      $(elementId).append(attributeItem);
+    }
+  });
+}
+
+function displayComputerCard(industryName) {
+  $("#computer_industry").text(industryName);
+}
+
+$("#playercard_categories").on("click", ".clickable-attribute", function() {
+  const chosenAttribute = $(this).data("attribute");
+  compareCards(chosenAttribute);
+});
+
+function compareCards(attribute) {
+  const playerValue = playerCard[attribute];
+  const computerValue = computerCard[attribute];
+  let resultText = "";
+
+  if (playerValue > computerValue) {
+    playerScore++;
+    resultText = `You won this round! ${attribute}: Player (${playerValue}) vs Computer (${computerValue})`;
+  } else if (playerValue < computerValue) {
+    computerScore++;
+    resultText = `Computer won this round! ${attribute}: Player (${playerValue}) vs Computer (${computerValue})`;
+  } else {
+    playerScore++;
+    computerScore++;
+    resultText = `It's a draw! ${attribute}: Player (${playerValue}) vs Computer (${computerValue})`;
+  }
+
+  updateScores();
+  roundsPlayed++;
+  $("#resultMessage").text(resultText);
+  $("#resultModal").modal("show");
+}
+
+$("#closeModal").click(function() {
+  $("#resultModal").modal("hide");
+  setTimeout(() => startTurn(), 200);
+});
+
+function updateScores() {
+  $("#player_count").text(playerScore);
+  $("#computer_count").text(computerScore);
+}
+
+function showSummary() {
+  $("#gameContainer").hide();
+  $("#summaryScreen").show();
+  $("#finalPlayerScore").text(playerScore);
+  $("#finalComputerScore").text(computerScore);
+  $("#averagePlayerScore").text((playerScore / maxRounds).toFixed(2));
+  $("#averageComputerScore").text((computerScore / maxRounds).toFixed(2));
+}
+
+$("#playAgain").click(function() {
+  $("#summaryScreen").hide();
+  $("#startGame").show(); // Show the "Start Game" button when restarting
+  $("#startGame").click();
+});
+</script>
+</body>
+</html>
